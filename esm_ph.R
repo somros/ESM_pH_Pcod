@@ -17,23 +17,28 @@ latrange <- c(52, 62)
 # fetch functions
 source('esm_ph_funs.R')
 
-esm <- 'GFDL'
+# make keys
+gfdl_key <- make_esm_nmfs_key(esm = 'GFDL', spatial_mask = nmfs)
+miroc_key <- make_esm_nmfs_key(esm = 'MIROC', spatial_mask = nmfs)
+# cesm2_key <- make_esm_nmfs_key(esm = 'CESM2', spatial_mask = nmfs)
+
+# create all combinations of esm and scenarios and slices
+esm <- c('GFDL', 'MIROC')
 run <- c('historical', 'ssp126', 'ssp585')
 esm_slice <- c('surface', 'bottom')
 
-# make keys
-gfdl_key <- make_esm_nmfs_key(esm = 'GFDL', spatial_mask = nmfs)
-
-# create all combinations of esm and scenarios and slices
 opts <- expand.grid(esm, run, esm_slice) %>% set_names(c('esm','run','esm_slice'))
 
 esm_ph <- purrr::pmap_dfr(opts, get_esm_ph)
 
+# write out
+esm_ph %>% write.csv('esm_ph.csv', row.names = F)
+
 # view
 esm_ph %>%
-  filter(NMFS_AREA %in% c(610,620)) %>%
+  filter(NMFS_AREA == 620) %>%
   ggplot(aes(x = as.Date(paste(year, month, '01', sep = '-')), y = ph_mean, color = run))+
   geom_line()+
   theme_bw()+
-  labs(x = '', y = 'pH')+
-  facet_wrap(slice~NMFS_AREA, scales = 'free')
+  labs(x = '', y = 'pH', title = 'NMFS area 620')+
+  facet_grid(slice~esm, scales = 'free')
