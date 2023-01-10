@@ -90,7 +90,8 @@ make_esm_nmfs_key <- function(esm, run = 'historical', spatial_mask){
     ungroup()
   
   # view
-  # esm_nmfs %>% ggplot()+geom_sf(aes(fill = factor(NMFS_AREA)))
+  #esm_nmfs %>% ggplot()+geom_sf(aes(fill = factor(NMFS_AREA)))+theme_bw()+labs(title = 'Intersection of MIROC 1x1 grid cells and NMFS areas')
+
   
   # extract key
   key <- esm_nmfs %>%

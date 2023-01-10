@@ -19,6 +19,12 @@ We extract variables from the deepest and shallowest slice for each ESM cell (1 
 
 We are not performing any spatial statistical downscaling at present. We intersect ESM cells with the NMFS management areas (shallower than 1000 m) and average the variables per time step weighting values by the area of the intersection.
 
+[GFDL grid](gfdl_grid.png)
+
+
+[MIROC grid](miroc_grid.png)
+
+
 Caveats:
 
  - If the interest is on cod nursery grounds only, we may skew the averages by including cells that are really deep / in the wrong general area. 
