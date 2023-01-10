@@ -16,6 +16,8 @@
 #' 
 make_esm_nmfs_key <- function(esm, run = 'historical', spatial_mask){
   # Build key to match ESM cells to NMFS areas
+  # esm = 'MIROC'
+  # spatial_mask <- nmfs
   
   # get list of files for this esm and run combination
   esm_files <- list.files(paste0('../data/', esm, '/', run, '/'), full.names = T)
@@ -24,8 +26,15 @@ make_esm_nmfs_key <- function(esm, run = 'historical', spatial_mask){
   esm_gridfile <- esm_files[1]
   
   # get its first time step
+  # which grid do we need to use?
+  if(esm == 'GFDL'){
+    tg <- 'D3'
+  } else if(esm == 'MIROC') {
+    tg <- 'D0'
+  }
+  
   gridtime <- tidync(esm_gridfile) %>% 
-    activate("D3") %>% # this is the time grid - different ESMs may have it different so check
+    activate(tg) %>% # this is the time grid - different ESMs may have it different so check
     hyper_array()
   
   t0 <- gridtime$time[1] # time variable name may change across ESMs
@@ -68,6 +77,9 @@ make_esm_nmfs_key <- function(esm, run = 'historical', spatial_mask){
     mutate(geometry = purrr::map(coords, make_cell_geom)) %>%
     select(-coords) %>%
     st_as_sf(crs = 4326)
+  
+  # view
+  # esm_sf %>% ggplot()+geom_sf()
   
   # intersect to the nmfs areas dataframe, get area of intersections, and store their index and NMFS area code
   # this function takes a few minutes, so you want to run it only once per ESM
@@ -143,8 +155,31 @@ get_esm_ph <- function(esm, run, esm_slice){
     
     # now pull data from netcdf
     this_esm_data <- esm_data %>% hyper_filter(lon = lon > lonrange[1] & lon <= lonrange[2], 
-                                               lat = lat > latrange[1] & lat <= latrange[2]) %>%
-      hyper_tibble() 
+                                               lat = lat > latrange[1] & lat <= latrange[2])
+    
+    # MIROC hist runs are all in one very large file, so let's index time beforehand if the model is MIROC
+    if(esm == 'MIROC'){
+      gridtime <- esm_data %>% 
+        activate('D0') %>% # this is the time grid - different ESMs may have it different so check
+        hyper_array()
+      
+      t <- gridtime$time # get time series of time steps
+      tday <- origin + t # transform to dates based on origin
+      tday1970 <- tday[tday > as.Date('1969-12-01')] # select dates after Dec 1969
+      tidx <- pmatch(tday1970, tday) # find position in original time vector
+      tsub <- t[tidx] # subset
+      tstart <- tsub[1] # get first position
+      
+      this_esm_data <- esm_data %>% hyper_filter(lon = lon > lonrange[1] & lon <= lonrange[2], 
+                                                 lat = lat > latrange[1] & lat <= latrange[2],
+                                                 time = time > tstart) %>%
+        hyper_tibble() 
+    } else {
+      # for GFDL we selected nc files 1970 onwards so no need to filter time step
+      this_esm_data <- esm_data %>% hyper_filter(lon = lon > lonrange[1] & lon <= lonrange[2], 
+                                                 lat = lat > latrange[1] & lat <= latrange[2]) %>%
+        hyper_tibble() 
+    }
     
     # get surface or bottom slice from ESM, assuming each to be representative of surface and bottom respectively
     if(esm_slice == 'surface') {
