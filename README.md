@@ -31,3 +31,15 @@ Caveats:
  - MIROC cells seems sparser than GFDL - i.e. there are fewer overlapping with the GOA
  - Vertical structure (lev) seem to differ between ESMs - so taking the top and bottom slice from each model may mean that we are pulling output from slightly different depths.
  - I cannot find CESM2 pH projection experiments.
+ 
+
+# MIROC vs GFDL bottom pH
+
+Values of bottom pH differ greatly between GFDL and MIROC, even within the same NMFS area (see figures below). One possible explanation is that the vertical layers differ between the two models, so values of pH pulled from the deepest slice may be different because the depths of the deepest slices themselves are different. Average depth of ESM cells per NMFS area is not that different between the two models though. 
+
+![Area 610](model_comparison_610.png)
+
+It does not seem to be an issue with the code - the MIROC projections I pulled simply have much higher values of pH at depth.
+
+![Vertical profiles of pH](vertical_profiles_610.png)
+
