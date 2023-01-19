@@ -159,7 +159,7 @@ get_esm_ph <- function(esm, run, esm_slice){
                                                lat = lat > latrange[1] & lat <= latrange[2])
     
     # MIROC hist runs are all in one very large file, so let's index time beforehand if the model is MIROC
-    if(esm == 'MIROC'){
+    if(esm == 'MIROC' & run == 'historical'){
       gridtime <- esm_data %>% 
         activate('D0') %>% # this is the time grid - different ESMs may have it different so check
         hyper_array()
