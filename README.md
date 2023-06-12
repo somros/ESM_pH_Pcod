@@ -24,8 +24,14 @@ We are not performing any spatial statistical downscaling at present. We interse
 
 ![MIROC grid](miroc_grid.png)
 
+# Data extraction
 
-Caveats:
+Data were pulled from [here](https://esgf-node.llnl.gov/search/cmip6/). Search tips from Kelly Kearney were used: "When searching for individual datasets, I'll usually select the Source ID and Variant Label from the left-hand filters, then press the "Search" button; that will eliminate a lot of the options and minimize scrolling.  Then select "ocnBgchem" from the Realm options, and press "Search" again.  Finally, select the specific variable or variables that you want.  For ph, most models will probably have the data at monthly resolution (Table ID "Omon").  A few models offer data on either the native grid ("gn") or regridded to a more standard lat/lon/depth grid ("gr"); the latter is almost always what you'll want."
+
+The spatial resolution for all these data sets was 1x1 degree.
+
+
+# Caveat
 
  - If the interest is on cod nursery grounds only, we may skew the averages by including cells that are really deep / in the wrong general area. 
  - MIROC cells seems sparser than GFDL - i.e. there are fewer overlapping with the GOA

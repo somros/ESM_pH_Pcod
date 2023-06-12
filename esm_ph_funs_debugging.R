@@ -16,11 +16,8 @@
 #' 
 make_esm_nmfs_key <- function(esm, run = 'historical', spatial_mask){
   # Build key to match ESM cells to NMFS areas
-  # esm = 'GFDL'
+  # esm = 'MIROC'
   # spatial_mask <- nmfs
-  
-  # drop Model field from the spatial mask
-  spatial_mask <- spatial_mask %>% dplyr::select(-Model)
   
   # get list of files for this esm and run combination
   esm_files <- list.files(paste0('../data/', esm, '/', run, '/'), full.names = T)
@@ -94,33 +91,10 @@ make_esm_nmfs_key <- function(esm, run = 'historical', spatial_mask){
   
   # view
   #esm_nmfs %>% ggplot()+geom_sf(aes(fill = factor(NMFS_AREA)))+theme_bw()+labs(title = 'Intersection of MIROC 1x1 grid cells and NMFS areas')
-
-  # some fragmented areas within the same ESM cell get assigned to adjacent but different NMFS areas, likely as an artefact of the spatial join
-  # Combining them based on the larger NMFS area of the two
   
-  esm_nmfs_list <- split(esm_nmfs, esm_nmfs$idx)
   
-  combine_dups <- function(esm_by_idx){
-    if(nrow(esm_by_idx) > 1){
-      this_nmfs_area <- esm_by_idx %>% arrange(desc(area)) %>% head(1) %>% pull(NMFS_AREA)
-      
-      esm_by_idx <- esm_by_idx %>% mutate(NMFS_AREA = this_nmfs_area) %>%
-        group_by(NMFS_AREA, idx) %>%
-        summarise(geometry = st_union(geometry),
-                  area = sum(area)) %>%
-        ungroup()
-    }
-    return(esm_by_idx)
-  }
-  
-  esm_nmfs_list_step2 <- lapply(esm_nmfs_list, combine_dups)
-  
-  esm_nmfs_step3 <- bind_rows(esm_nmfs_list_step2)
-  
-  esm_nmfs_step3 %>% ggplot()+geom_sf(aes(fill = area))+theme_bw()
-
   # extract key
-  key <- esm_nmfs_step3 %>%
+  key <- esm_nmfs %>%
     select(idx, NMFS_AREA, area) %>%
     st_set_geometry(NULL) %>%
     distinct()
@@ -143,11 +117,7 @@ make_esm_nmfs_key <- function(esm, run = 'historical', spatial_mask){
 #' @export
 #' 
 #' 
-get_esm_ph <- function(esm, run, esm_slice){
-  
-  # esm = 'GFDL' 
-  # run = 'historical'   
-  # esm_slice = 'surface'
+get_esm_ph <- function(esm, run){
   
   # determine which key we need to use
   if(esm == 'GFDL'){
@@ -185,8 +155,8 @@ get_esm_ph <- function(esm, run, esm_slice){
     these_cells <- key %>% pull(idx) %>% unique()
     
     # now pull data from netcdf
-    # this_esm_data <- esm_data %>% hyper_filter(lon = lon > lonrange[1] & lon <= lonrange[2], 
-    #                                            lat = lat > latrange[1] & lat <= latrange[2])
+    this_esm_data <- esm_data %>% hyper_filter(lon = lon > lonrange[1] & lon <= lonrange[2], 
+                                               lat = lat > latrange[1] & lat <= latrange[2])
     
     # MIROC hist runs are all in one very large file, so let's index time beforehand if the model is MIROC
     if(esm == 'MIROC' & run == 'historical'){
@@ -213,17 +183,17 @@ get_esm_ph <- function(esm, run, esm_slice){
     }
     
     # get surface or bottom slice from ESM, assuming each to be representative of surface and bottom respectively
-    if(esm_slice == 'surface') {
-      this_esm_data <- this_esm_data %>%
-        group_by(time, lon, lat) %>%
-        slice_min(lev) %>%
-        ungroup()
-    } else {
-      this_esm_data <- this_esm_data %>%
-        group_by(time, lon, lat) %>%
-        slice_max(lev) %>%
-        ungroup()
-    }
+    # if(esm_slice == 'surface') {
+    #   this_esm_data <- this_esm_data %>%
+    #     group_by(time, lon, lat) %>%
+    #     slice_min(lev) %>%
+    #     ungroup()
+    # } else {
+    #   this_esm_data <- this_esm_data %>%
+    #     group_by(time, lon, lat) %>%
+    #     slice_max(lev) %>%
+    #     ungroup()
+    # }
     
     # add time and cell index
     this_esm_data <- this_esm_data %>% 
@@ -237,14 +207,10 @@ get_esm_ph <- function(esm, run, esm_slice){
     this_esm_data <- this_esm_data %>%
       left_join(key, by = 'idx')
     
-    # now group by time step and NMFS area, and average bottom ph weighting by cell area
+    # left ungrouped for debugging
     mean_ph <- this_esm_data %>%
-      group_by(year, month, NMFS_AREA) %>%
-      summarise(ph_mean = weighted.mean(ph, area)) %>%
-      ungroup() %>%
       mutate(esm = esm,
-             run = run,
-             slice = esm_slice)
+             run = run)
     
     this_esm_scenario[[i]] <- mean_ph
   }
